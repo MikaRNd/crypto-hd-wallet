@@ -37,6 +37,49 @@ app.use(cors({
 
 app.use(express.json());
 
+// -------------------- API Endpoints --------------------
+
+/**
+ * @api {get} /api/address/:userId Generate HD Wallet Address
+ * @apiName GenerateAddress
+ * @apiGroup Wallet
+ * 
+ * @apiParam {Number} userId Unique user identifier
+ * 
+ * @apiSuccess {String} address Generated Ethereum address
+ * @apiSuccess {String} derivationPath BIP44 derivation path used
+ * @apiSuccess {Number} userId The user ID used for generation
+ * 
+ * @apiError {String} error Error message if address generation fails
+ */
+app.get('/api/address/:userId', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId) || userId < 0) {
+      return res.status(400).json({ error: 'User ID must be a non-negative number' });
+    }
+
+    const address = getDepositAddress(userId);
+    const derivationPath = pathForUser(userId);
+    
+    res.json({
+      success: true,
+      address,
+      derivationPath,
+      userId
+    });
+  } catch (error) {
+    console.error('Error generating address:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to generate address',
+      details: error.message 
+    });
+  }
+});
+
+
 // -------------------- Schema & metadata setup --------------------
 async function ensureMetadataTable() {
   console.log('[DEBUG] ensureMetadataTable called'); // 🔹 Debug: function is invoked
